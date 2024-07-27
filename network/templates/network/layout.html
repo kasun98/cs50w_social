@@ -1,0 +1,148 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>{% block title %}Social Network{% endblock %}</title>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+        <link href="{% static 'network/styles.css' %}" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+        
+        <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+        <script>
+            // like and unlike function
+            function like_un(pid, uid) {
+                fetch(`/likes/${pid}`)
+                .then(response => response.json())
+                .then(post => {
+                    const like_count = post.like_count;
+                    const likers =  post.likers;
+                    console.log(likers, like_count)
+
+                    var element = document.getElementById(`like${pid}`);
+                    var likeCount = document.getElementById(`likecount${pid}`);
+                    let new_like_count;
+        
+                    if (likers.includes(uid)) {
+                        likers.splice(likers.indexOf(uid), 1);
+                        new_like_count = like_count - 1;
+                        element.classList.remove('fa-heart');
+                        element.classList.add('fa-heart-o');
+                        likeCount.textContent = new_like_count;
+        
+                    } else {
+                        likers.push(uid);
+                        new_like_count = like_count + 1;
+                        element.classList.remove('fa-heart-o');
+                        element.classList.add('fa-heart');
+                        likeCount.textContent = new_like_count;
+                    }
+        
+                    fetch(`/likes/${pid}`, {
+                            method: 'PUT',
+                            body: JSON.stringify({
+                                like_count: new_like_count,
+                                likers: likers
+                            })
+                        })
+                });
+            }
+                
+        </script>
+
+        <script>
+            // edit post and save
+            function edit(pid) {
+                document.querySelector('#all-posts').style.display = 'none';
+                document.querySelector('#edit-block').hidden = false;
+
+                fetch(`/posts/${pid}`)
+                .then(response => response.json())
+                .then(post => {
+                    const content = post.content;
+                    const id =  post.poster_id;
+                    
+                    document.querySelector('#pid').value = pid;
+                    document.querySelector('#edit-post-ta').innerHTML = content;
+                    document.querySelector('#cnt').innerHTML = content;
+                    document.querySelector('#edit-post-submit-btn').addEventListener('click', () => save(content,id));
+
+                });
+                
+            }
+
+            function save(content,id) {
+                const newcontent = document.querySelector('#edit-post-ta').value;
+                const pid = document.querySelector('#pid').value;
+
+                if ((content != newcontent) && (newcontent.trim() != '')) {
+                    fetch(`/posts/${pid}`, {
+                        method: 'PUT',
+                        body: JSON.stringify({
+                            content: newcontent
+                        })
+                    });
+                    showModal('Post saved successfully!');
+                    setTimeout(() => {
+                        var redirectUrl = "{% url 'view_profile' 0 %}".replace('0', id);
+                        window.location.href = redirectUrl;
+                    }, 2000);
+
+                } else if (content === newcontent) {
+                    showModal('No changes detected!');
+                } else {
+                    showModal('Error!');
+                }
+            }
+
+            // popup messages
+            function showModal(message) {
+                document.getElementById('modalMessage').innerText = message;
+                $('#messageModal').modal('show');
+            }
+        </script>
+        
+    </head>
+    <body>
+
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <a class="navbar-brand" href="{% url 'network' %}">Network</a>
+          
+            <div>
+              <ul class="navbar-nav mr-auto">
+                {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'view_profile' user.id %}"><strong>{{ user.username }}</strong></a>
+                    </li>
+                {% endif %}
+                <li class="nav-item">
+                  <a class="nav-link" href="{% url 'index' %}">All Posts</a>
+                </li>
+                {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'following' %}">Following</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'logout' %}">Log Out</a>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'login' %}">Log In</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'register' %}">Register</a>
+                    </li>
+                {% endif %}
+              </ul>
+            </div>
+          </nav>
+        
+        <div class="body">
+            {% block body %}
+            {% endblock %}
+        </div>
+    </body>
+</html>

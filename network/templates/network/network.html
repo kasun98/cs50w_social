@@ -1,0 +1,74 @@
+{% extends "network/layout.html" %}
+{% load static %}
+
+{% block body %}
+
+    <style>
+        .fa-heart-o:hover:before {
+            content: '\f004'; 
+            color: red;
+        }
+        .fa-heart-o:before {
+            content: '\f08a'; 
+        }
+        .image-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            max-width: 100%;
+            max-height: 100%;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .responsive-image {
+            max-width: 100%;
+            max-height: 90vh; /* Use viewport height */
+            height: auto;
+            width: auto;
+            display: block;
+        }
+    </style>
+
+    {% if messages %}
+    <div>
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    {% for following in followings %}
+    <a href="{% url 'view_profile' following.profile_id.id %}" style="text-decoration: none; display: inline-flex; color: black;"><div class="card mb-3" style="max-width: 400px;border-radius: 10px; margin: 10px;" >
+        <div class="row g-0">
+          <div style="padding: 20px;" class="col-md-4">
+            <img src="{% static 'network/user.png' %}" class="img-fluid rounded-start" alt="user">
+          </div>
+          <div class="col-md-8">
+            <div class="card-body">
+              <h5 class="card-title" style="font-family: cursive; font-weight: bold;">{{following.profile_id}}</h5>
+              <p class="card-text">{{following.net_followers}} Followers</p>
+              <p class="card-text">{{following.net_followings}} Following</p>
+                
+              
+            </div>
+          </div>
+        </div>
+    </div></a>
+
+    {% empty %}
+    <div class="alert alert-info" role="alert">Connect with friends!</div>
+    <div class="image-container">
+        <img  src="https://res.cloudinary.com/dlb65j6di/image/upload/v1720444741/connected-world-concept-illustration_kzvgro.png" alt="connect" class="responsive-image">
+    </div>
+    {% endfor %}
+
+    
+    
+    
+{% endblock %}

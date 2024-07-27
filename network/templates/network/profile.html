@@ -1,0 +1,143 @@
+{% extends "network/layout.html" %}
+{% load static %}
+{% block body %}
+
+    <style>
+        .fa-heart-o:hover:before {
+            content: '\f004'; 
+            color: red;
+        }
+        .fa-heart-o:before {
+            content: '\f08a'; 
+        }
+    </style>
+
+    {% if messages %}
+    <div>
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <a style="display: flex; justify-content: center;"><div class="card mb-3" style="max-width: 540px;border-radius: 10px;">
+        <div class="row g-0">
+          <div style="padding: 20px;" class="col-md-4">
+            <img src="{% static 'network/user.png' %}" class="img-fluid rounded-start" alt="user">
+          </div>
+          <div class="col-md-8">
+            <div class="card-body">
+              <h5 class="card-title" style="font-family: cursive; font-weight: bold;">{{profile.profile_id}}</h5>
+              <p class="card-text">{{followers}} Followers</p>
+              <p class="card-text">{{followings}} Following</p>
+                {% if user.is_authenticated %}
+                    {% if user != profile.profile_id %}
+                        <form method="post">
+                            {% csrf_token %}
+                            <input hidden name="uid" value={{profile.profile_id}}>
+                            {% if follower %}
+                            <button class="card" type="submit" id="follow-btn">Unfollow</button>
+                            {% else %}
+                            <button class="card" type="submit" id="follow-btn">Follow</button>
+                            {% endif %}
+                        </form>
+                    {% endif %}
+                {% endif %}
+              
+            </div>
+          </div>
+        </div>
+      </div></a>
+
+    
+    <div id="all-posts">
+    {% for post in page_obj %}
+    <hr>
+    <div class="post">
+        
+        {% if user == profile.profile_id %}
+        <ul class="list-group list-group-horizontal">
+            <li class="list-group-item"><a href="{% url 'view_profile' post.poster_id.id %}"><h6 >{{post.poster_id}}</h6> </a></li>
+            <li class="list-group-item"><button id="edit" value={{post.id}} class="edit-btn" onclick="edit(value)"><i class="fa fa-edit" style="font-size:20px;color:blue"></i></button></li>
+        </ul>
+        <br>
+        {% else %}
+        <a href="{% url 'view_profile' post.poster_id.id %}"><h6 >{{post.poster_id}}</h6> </a>
+        {% endif %}
+        {{post.content}} <br>
+        <a style="color: rgb(135, 135, 135); font-family: cursive; font-size:small;">{{post.datetime}}</a> <br>
+        
+        {% if user.is_authenticated %}
+            {% if user.id in post.likers %}
+            <a id="like{{ post.id }}" class="fa fa-heart" style="font-size:23px;color:red; cursor: pointer;" onclick="like_un({{ post.id }}, {{ user.id }})"></a>
+            {% else %}
+            <a id="like{{ post.id }}" class="fa fa-heart-o" style="font-size:23px;color:red; cursor: pointer;" onclick="like_un({{ post.id }}, {{ user.id }})"></a>
+            {% endif %}
+        {% else %}
+        <a id="unlike{{ post.id }}" class="fa fa-heart-o" style="font-size:23px;color:red" ></a>
+        {% endif %}
+        <a id="likecount{{ post.id }}">{{post.like_count}}</a>
+    </div>
+    
+    {% empty %}
+        <div class="alert-none">
+            Nothing to show!
+        </div>
+    {% endfor %}
+
+    {% if posts != none %}
+    <nav aria-label="Page navigation example">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page=1">&laquo; first</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">previous</a></li>
+            {% endif %}
+    
+            <li class="page-item">
+                <a class="page-link" >Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</a>
+            </li>
+    
+            {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">next</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+    <hr>
+    </div>
+    <div hidden id="edit-block">
+        <div class="post">
+            <h5>Edit post</h5>
+            <h6 id="cnt"></h6>
+            <div class="new-post">
+                <a hidden id="pid"></a>
+                <textarea id="edit-post-ta" class="new-post-ta" name="new-post-ta" required ></textarea>
+                <input id="edit-post-submit-btn" class="btn btn-primary" type="submit" value="Save">
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Message</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="modalMessage">
+                
+                </div>
+                <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+{% endblock %}
